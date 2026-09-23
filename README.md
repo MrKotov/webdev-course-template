@@ -4,7 +4,7 @@ This repository is your workspace for the whole course: Exercise 1 in `mcp-serve
 
 ## Start
 
-1. On the course template page, click **Use this template → Create a new repository**. Make it **private** and name it `webdev-<your faculty number>`.
+1. On the course template page, click **Use this template → Create a new repository**. Make it **public** and name it `webdev-<your faculty number>`.
 2. In your new repository, go to **Settings → Collaborators** and add the lecturer.
 3. Click **Code → Codespaces → Create codespace on main**. The first start takes a few minutes while the tools are installed.
 4. When the terminal shows `Workspace ready`, type `gemini` and follow the sign-in steps on the course setup page.

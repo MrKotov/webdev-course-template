@@ -41,3 +41,10 @@ jobs:
       - name: No project yet
         if: hashFiles('package.json', 'requirements.txt', 'pyproject.toml') == ''
         run: echo "No package.json, requirements.txt or pyproject.toml yet. Nothing to test."
+
+      # From Exercise 4 on. An image that does not build is the most common reason a
+      # deploy fails, and finding it here takes a minute instead of waiting for the
+      # host to build it remotely and reading its log. Skipped until you write one.
+      - name: Docker image builds
+        if: hashFiles('Dockerfile') != ''
+        run: docker build -t ci-check .

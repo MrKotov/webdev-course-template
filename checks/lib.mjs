@@ -1,6 +1,6 @@
 // Shared helpers for the exercise self-checks.
 // These check STRUCTURE, not quality: they tell you something required is missing,
-// they cannot tell you the work is good. The rubric on the exercise page does that.
+// they cannot tell you the work is good. Only you and the defence can do that.
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -55,6 +55,10 @@ export function report(title) {
   console.log(`${title}\n`);
   for (const r of results) console.log(`${r.ok ? 'ok  ' : 'FAIL'} ${r.name}${r.ok || !r.detail ? '' : `\n       ${r.detail}`}`);
   console.log(`\n${results.length - failed.length}/${results.length} checks passed`);
-  console.log(failed.length ? 'These are structural checks. Passing them is the minimum, not the mark.' : 'Structure is in place. The rubric on the exercise page decides the mark.');
+  console.log(
+    failed.length
+      ? 'These are structural checks and they must all pass before you hand in. Passing them is the minimum, not the point.'
+      : 'Structure is in place. Whether the work is any good is decided by your evidence and by the defence.',
+  );
   process.exit(failed.length ? 1 : 0);
 }

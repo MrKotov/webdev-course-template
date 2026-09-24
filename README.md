@@ -39,7 +39,9 @@ node checks/ex4.mjs https://your-app.onrender.com         # exercise 4, URL opti
 node checks/ex5.mjs                                       # exercise 5
 ```
 
-They check **structure**, not quality: they catch a missing section, an unwritten acceptance criterion or a fix committed without its test. Passing them is the minimum, and the rubric on the exercise page decides the mark.
+They check **structure**, not quality: they catch a missing section, an unwritten acceptance criterion or a fix committed without its test. Every check must pass before you hand in: an exercise that fails one comes back to you as incomplete. Passing them all is the minimum, not the point. What the work is worth is decided by the evidence you wrote down and by the defence at the end of the course, where you explain your own code.
+
+`checks/collect.mjs` is not for you: it is how the lecturer runs the same check across the whole group at once. You are looking at exactly the gate your work has to clear.
 
 ## Submitting
 

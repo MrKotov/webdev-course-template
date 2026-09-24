@@ -30,6 +30,17 @@ child.on('error', (error) => {
   process.exit(2);
 });
 
+/** anything your server wrote to stderr, and how it ended, so a crash is not reported as silence */
+let errorOutput = '';
+let exit;
+child.stderr.setEncoding('utf8');
+child.stderr.on('data', (chunk) => {
+  errorOutput += chunk;
+});
+child.on('exit', (code, signal) => {
+  if (exit === undefined) exit = signal ? `killed by ${signal}` : `exited with code ${code}`;
+});
+
 /** replies your server printed, in order */
 const replies = [];
 const junk = [];
@@ -117,5 +128,16 @@ check('nothing but protocol on stdout', junk.length === 0, junk.length ? `saw ${
 const failed = results.filter((r) => !r.ok);
 for (const r of results) console.log(`${r.ok ? 'ok  ' : 'FAIL'} ${r.name}${r.ok || !r.detail ? '' : `\n       ${r.detail}`}`);
 console.log(`\n${results.length - failed.length}/${results.length} checks passed`);
+
+// A server that never starts answers nothing, and "no reply arrived" on every line
+// says nothing about why. Whatever it printed before dying is the actual answer.
+if (failed.length && errorOutput.trim()) {
+  const lines = errorOutput.trim().split('\n');
+  console.log(`\nYour server printed this${exit ? ` before it ${exit}` : ''}:`);
+  for (const line of lines.slice(0, 12)) console.log(`   ${line}`);
+  if (lines.length > 12) console.log(`   ... ${lines.length - 12} more line(s)`);
+  console.log('Read that first: a server that crashes at start-up fails every check below for one reason.');
+}
+
 if (failed.length) console.log('Fix the failures above yourself. The agent may explain a message, but not write the handler.');
 process.exit(failed.length ? 1 : 0);

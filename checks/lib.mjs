@@ -2,8 +2,8 @@
 // These check STRUCTURE, not quality: they tell you something required is missing,
 // they cannot tell you the work is good. Only you and the defence can do that.
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { extname, join } from 'node:path';
 
 export const results = [];
 export const check = (name, ok, detail = '') => results.push({ name, ok: Boolean(ok), detail });
@@ -29,6 +29,15 @@ export const filled = (body) =>
     .map((l) => l.replace(/^[-*\d.\s\[\]x]+/i, '').trim())
     .filter((l) => l.length > 2);
 
+/** a section with its guidance comments removed, for regex questions like "does this mention Google" */
+export const prose = (body) => (body ?? '').replace(/<!--[\s\S]*?-->/g, '');
+
+/**
+ * Lines that carry an answer, not just a label. The template ships stubs like "- Model:",
+ * and `filled` counts those as content because it only looks at length.
+ */
+export const answered = (body) => filled(body).filter((l) => !/^[^:]{1,40}:\s*$/.test(l));
+
 export const git = (args, fallback = '') => {
   try {
     return execFileSync('git', args, { encoding: 'utf8' }).trim();
@@ -48,6 +57,113 @@ export const findFile = (dir, test, depth = 3) => {
     } else if (test(entry.name, full)) return full;
   }
   return null;
+};
+
+/** JSON that may not be there or may not parse */
+export const json = (path) => {
+  try {
+    return JSON.parse(readFileSync(path, 'utf8'));
+  } catch {
+    return null;
+  }
+};
+
+/** every file under dir matching test; the plural of findFile */
+export const findFiles = (dir, test, depth = 4, out = []) => {
+  if (!existsSync(dir) || depth < 0) return out;
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (entry.name === 'node_modules' || entry.name === 'dist' || entry.name === 'checks' || entry.name.startsWith('.')) continue;
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) findFiles(full, test, depth - 1, out);
+    else if (test(entry.name, full)) out.push(full);
+  }
+  return out;
+};
+
+const SOURCE = new Set([
+  '.js', '.mjs', '.cjs', '.ts', '.tsx', '.jsx', '.py', '.rb', '.go', '.java', '.cs', '.php',
+  '.html', '.css', '.svelte', '.vue', '.astro', '.sql', '.yml', '.yaml', '.json', '.md', '.sh',
+]);
+
+/** every source file in the project, so a check can ask "is this anywhere at all" */
+export const sources = (dir = '.') =>
+  findFiles(dir, (name) => SOURCE.has(extname(name)), 5).filter((f) => {
+    try {
+      return statSync(f).size < 400_000;
+    } catch {
+      return false;
+    }
+  });
+
+/**
+ * Files whose contents match a pattern. Language-agnostic on purpose: these checks
+ * must work whether the student picked Node, Python or something else.
+ */
+export const grep = (pattern, { files = sources(), where = () => true } = {}) => {
+  const re = pattern instanceof RegExp ? pattern : new RegExp(pattern, 'i');
+  const hits = [];
+  for (const file of files) {
+    if (!where(file)) continue;
+    let text;
+    try {
+      text = readFileSync(file, 'utf8');
+    } catch {
+      continue;
+    }
+    if (re.test(text)) hits.push(file);
+  }
+  return hits;
+};
+
+/** the source files that look like tests, by the usual naming conventions */
+export const testFiles = (dir = '.') =>
+  findFiles(dir, (name) => /(\.test\.|_test\.|\.spec\.)/.test(name) || /^test_.*\.(py|js|mjs|ts)$/.test(name), 5);
+
+/**
+ * The AC-n ids declared in SPEC.md. The convention is `- [AC-3] ...` under
+ * "## Acceptance criteria"; a test proves it by naming the id in its title.
+ * Grep-based traceability cannot go stale quietly the way a hand-kept table can.
+ */
+export const acceptanceIds = (spec) => {
+  const body = section(spec, 'Acceptance criteria');
+  return [...new Set([...(body ?? '').matchAll(/\bAC-(\d+)\b/g)].map((m) => `AC-${m[1]}`))];
+};
+
+/** run a command and report what happened, instead of throwing */
+export const run = (cmd, args, { timeout = 180_000, cwd = '.' } = {}) => {
+  try {
+    const out = execFileSync(cmd, args, { encoding: 'utf8', stdio: 'pipe', timeout, cwd, shell: false });
+    return { code: 0, out };
+  } catch (error) {
+    return { code: error.status ?? 1, out: `${error.stdout ?? ''}${error.stderr ?? ''}` || String(error.message) };
+  }
+};
+
+const SECRETS = [
+  [/\bAIza[0-9A-Za-z_-]{20,}/, 'a Google API key'],
+  [/\bGOCSPX-[0-9A-Za-z_-]{10,}/, 'a Google OAuth client secret'],
+  [/\bsk-[A-Za-z0-9]{20,}/, 'an OpenAI-style API key'],
+  [/\bghp_[A-Za-z0-9]{20,}/, 'a GitHub token'],
+  [/-----BEGIN [A-Z ]*PRIVATE KEY-----/, 'a private key'],
+];
+
+/**
+ * Your repository is public. A leaked key is billed to you and a leaked client
+ * secret lets anyone sign in as your app, so this runs from Exercise 2 onward.
+ */
+export const secretScan = (dir = '.') => {
+  const found = [];
+  for (const file of sources(dir)) {
+    if (file.includes('.env.example')) continue;
+    let text;
+    try {
+      text = readFileSync(file, 'utf8');
+    } catch {
+      continue;
+    }
+    for (const [re, what] of SECRETS) if (re.test(text)) found.push(`${file}: looks like ${what}`);
+  }
+  return found;
 };
 
 export function report(title) {

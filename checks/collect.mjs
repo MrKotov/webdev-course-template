@@ -7,6 +7,7 @@
 //
 //   node checks/collect.mjs 3 students.txt
 //   node checks/collect.mjs 4 students.txt --url-suffix=.onrender.com
+//   node checks/collect.mjs project students.txt   (the pre-defence check, at tag "project")
 //
 // students.txt holds one student per line, blank lines and # comments ignored:
 //
@@ -30,8 +31,12 @@ if (!exercise || !list) {
   process.exit(2);
 }
 
-const check = exercise === '1' ? join(here, '..', 'mcp-server', 'check.mjs') : join(here, `ex${exercise}.mjs`);
-const tag = `ex${exercise}`;
+// A number means an exercise; a name means a check of its own, run at a tag of that name.
+const numbered = /^\d+$/.test(exercise);
+const check = exercise === '1'
+  ? join(here, '..', 'mcp-server', 'check.mjs')
+  : join(here, numbered ? `ex${exercise}.mjs` : `${exercise}.mjs`);
+const tag = numbered ? `ex${exercise}` : exercise;
 
 const students = readFileSync(list, 'utf8')
   .split('\n')
@@ -66,6 +71,19 @@ for (const student of students) {
     results.push({ ...student, status, detail });
     rmSync(workspace, { recursive: true, force: true });
     continue;
+  }
+
+  // From Exercise 3 on, the checks run the student's test suite, and a project with
+  // dependencies cannot run it in a bare clone. Install quietly; a failure here is not
+  // the student's fault to report, so let the check itself say what is missing.
+  try {
+    execFileSync('npm', ['ci', '--omit=dev', '--silent'], { cwd: workspace, stdio: 'ignore', timeout: 300_000 });
+  } catch {
+    try {
+      execFileSync('npm', ['install', '--silent'], { cwd: workspace, stdio: 'ignore', timeout: 300_000 });
+    } catch {
+      /* no package.json, or no network: the check reports what it finds */
+    }
   }
 
   try {

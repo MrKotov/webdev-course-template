@@ -141,10 +141,11 @@ console.log(`\n${results.length - failed.length}/${results.length} checks passed
 // says nothing about why. Whatever it printed before dying is the actual answer.
 if (failed.length && errorOutput.trim()) {
   const lines = errorOutput.trim().split('\n');
-  console.log(`\nYour server printed this${exit ? ` before it ${exit}` : ''}:`);
+  console.log(`\nYour server printed this on stderr${exit ? ` before it ${exit}` : ''}:`);
   for (const line of lines.slice(0, 12)) console.log(`   ${line}`);
   if (lines.length > 12) console.log(`   ... ${lines.length - 12} more line(s)`);
-  console.log('Read that first: a server that crashes at start-up fails every check below for one reason.');
+  // Only a server that stopped has crashed. One that is still running is just logging, as it should.
+  if (exit) console.log('Read that first: a server that crashes fails every check after the crash for one reason.');
 }
 
 if (failed.length) console.log('Fix the failures above yourself. The agent may explain a message, but not write the handler.');

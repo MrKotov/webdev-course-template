@@ -1,7 +1,7 @@
 // Exercise 4 self-check: is the project deployable and is the report honest?
 //   node checks/ex4.mjs                      structure only
 //   node checks/ex4.mjs https://your-app.url  also checks the live site
-import { answered, check, filled, json, read, report, section } from './lib.mjs';
+import { answered, check, filled, json, manifestValue, read, report, section } from './lib.mjs';
 
 check('a Dockerfile exists', read('Dockerfile') !== null, 'the image builds and runs your app');
 const env = read('.env.example');
@@ -13,7 +13,7 @@ check('CI runs on every push', ci !== null && /on:\s*[\s\S]{0,40}push/.test(ci),
 
 // ---- the coverage gate -------------------------------------------------------
 // Structure only, deliberately: this check runs in a shallow clone with no dependencies
-// installed. The green CI run on your ex4 tag is the gate; this only asks whether one exists.
+// installed. The green CI run on your latest push is the gate; this only asks whether one exists.
 const pkg = json('package.json');
 const make = read('Makefile') ?? '';
 const pyproject = read('pyproject.toml') ?? '';
@@ -73,7 +73,14 @@ if (readiness) {
   check('you say who may call your MCP tools', /token|who|user|permission|allowed|право|потребител/i.test(mcp), 'a tool call acts as somebody: say who, and what that grants');
 }
 
-const url = process.argv[2];
+// The deployment's address lives in course.json from now on, so this check can find
+// your site without being handed the URL each time.
+const declaredUrl = manifestValue('liveUrl');
+check('course.json names your live URL', Boolean(declaredUrl), 'fill in liveUrl, with no trailing slash');
+if (declaredUrl) check('the live URL is https', declaredUrl.startsWith('https://'), `course.json says ${declaredUrl}`);
+
+// An argument still wins, so you can point the check at a staging copy while you work.
+const url = process.argv[2] ?? declaredUrl;
 if (url) {
   const base = url.replace(/\/$/, '');
   check('the URL is https', base.startsWith('https://'), 'a public deployment must be https');
@@ -96,7 +103,7 @@ if (url) {
     check('the site serves a page', false, error.name === 'TimeoutError' ? 'no answer within 90s' : error.message);
   }
 } else {
-  console.log('Tip: pass your public URL to check the deployment too, e.g. node checks/ex4.mjs https://your-app.onrender.com\n');
+  console.log('Tip: fill in liveUrl in course.json, or pass a URL: node checks/ex4.mjs https://your-app.onrender.com\n');
 }
 
 report('Exercise 4 · deployment and readiness');

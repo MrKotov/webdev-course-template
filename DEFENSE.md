@@ -15,9 +15,9 @@
 <!-- Pick them now, not on the day. One should show a rule being enforced,
      one should show a boundary between layers, one is yours to choose. -->
 
-1. `` — because
-2. `` — because
-3. `` — because
+1. ``, because
+2. ``, because
+3. ``, because
 
 ## Decisions I can defend
 

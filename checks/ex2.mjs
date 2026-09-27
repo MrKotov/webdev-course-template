@@ -1,6 +1,6 @@
 // Exercise 2 self-check: is the spec written and does the repository carry it?
 //   node checks/ex2.mjs
-import { acceptanceIds, answered, check, filled, prose, read, report, secretScan, section } from './lib.mjs';
+import { acceptanceIds, answered, check, filled, json, manifestValue, prose, read, report, secretScan, section } from './lib.mjs';
 
 const spec = read('SPEC.md');
 check('SPEC.md exists', spec !== null, 'the template ships one, fill it in');
@@ -59,6 +59,16 @@ if (spec) {
     'what happens when the same person signs in both ways?');
 
   check('the UI section is filled in', answered(section(spec, 'UI')).length >= 1, 'the stack and the screens; the checklist lives in docs/UI.md');
+}
+
+// course.json says how to start things in this repository, so the checks do not have
+// to guess.
+const pkg = json('package.json');
+const mcpCommand = manifestValue('mcp');
+check('course.json says how to start your MCP server', Boolean(mcpCommand), 'the default "npm run mcp" is fine once that script exists');
+if (mcpCommand && /^npm run (\S+)/.test(mcpCommand)) {
+  const script = mcpCommand.match(/^npm run (\S+)/)[1];
+  check(`package.json has an "${script}" script`, Boolean(pkg?.scripts?.[script]), 'the command in course.json has to be one that actually runs');
 }
 
 const env = read('.env.example');

@@ -139,6 +139,20 @@ export const run = (cmd, args, { timeout = 180_000, cwd = '.' } = {}) => {
   }
 };
 
+/**
+ * course.json: the handful of facts about this copy of the repository that nobody can
+ * work out by reading the code: how to start the MCP server and where the deployment
+ * answers. It exists so those live somewhere a script can read, rather than in prose
+ * in a README, where no check can find them.
+ */
+export const manifest = () => json('course.json') ?? {};
+
+/** A manifest value that has actually been filled in, ignoring the guidance keys. */
+export const manifestValue = (key) => {
+  const value = manifest()[key];
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
+};
+
 const SECRETS = [
   [/\bAIza[0-9A-Za-z_-]{20,}/, 'a Google API key'],
   [/\bGOCSPX-[0-9A-Za-z_-]{10,}/, 'a Google OAuth client secret'],

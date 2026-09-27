@@ -30,6 +30,22 @@ The course setup page explains accounts, sign-in, free limits and what to do if 
 | `docs/UI.md` | The UI checklist your project is graded against (Exercise 4) |
 | `DEFENSE.md` | Your notes for the defence (Exercise 5) |
 | `.env.example` | Every environment variable your app needs, with placeholder values |
+| `course.json` | How to start your MCP server, and where your deployment answers |
+
+## Fill in `course.json` first
+
+Two facts about your copy that nobody can work out by reading the code:
+
+```json
+{
+  "mcp": "npm run mcp",
+  "liveUrl": "https://webdev-121220001.onrender.com"
+}
+```
+
+`mcp` is the command that starts your MCP server, which the Exercise 1 check runs, so
+add an `mcp` script to `package.json` and leave the default alone. `liveUrl` is filled
+in at Exercise 4. The self-checks read both.
 
 ## Check yourself before you hand in
 
@@ -46,18 +62,9 @@ node checks/project.mjs                                   # the night before the
 
 They check **structure**, not quality: they catch a missing section, an unwritten acceptance criterion or a fix committed without its test. Every check must pass before you hand in: an exercise that fails one comes back to you as incomplete. Passing them all is the minimum, not the point. What the work is worth is decided by the evidence you wrote down and by the defence at the end of the course, where you explain your own code.
 
-`checks/collect.mjs` is not for you: it is how the lecturer runs the same check across the whole group at once. You are looking at exactly the gate your work has to clear.
+## Showing your work
 
-## Submitting
-
-Push your work, then tag the commit you submit and push the tag:
-
-```bash
-git tag ex1
-git push origin ex1
-```
-
-Use `ex1` … `ex5`. Submit the repository link on the course platform. A later push does not change what you submitted.
+When an exercise is done, commit and push, so your work is on GitHub and CI has run on it. Then ask the assistant to check your work in the room. They go through the exercise page's **What the assistant checks** list with you, at your codespace, and either accept the exercise or tell you exactly what is still missing.
 
 ## Save your free quota
 
